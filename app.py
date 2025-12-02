@@ -30,8 +30,11 @@ except Exception as e:
     print("  Using dummy environment for Heroku deployment")
     
     # Register dummy environment
-    class DummyLunarLander:
+    class DummyLunarLander(gym.Env):
+        metadata = {"render_modes": ["rgb_array"], "render_fps": 60}
+        
         def __init__(self, render_mode=None):
+            super().__init__()
             self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
             self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
             self.render_mode = render_mode
