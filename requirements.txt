@@ -5,5 +5,4 @@ box2d-py==2.3.8
 opencv-python-headless==4.10.0.84
 gunicorn==21.2.0
 Pillow==10.4.0
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.8.0
+torch==2.5.0
