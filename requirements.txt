@@ -1,7 +1,9 @@
 flask==3.0.0
 torch==2.8.0
 numpy==2.0.2
-gymnasium[box2d]==1.1.1
+gymnasium==1.1.1
+swig==4.3.0
+box2d-py==2.3.5
 opencv-python-headless==4.10.0.84
 gunicorn==21.2.0
 Pillow==10.4.0
