@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LunarLander RL Learning Progress</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .checkpoint-selector {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            color: white;
+        }
+        
+        .checkpoint-selector h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .checkpoint-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .checkpoint-controls select {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            background: white;
+            color: #333;
+        }
+        
+        .checkpoint-controls button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: white;
+            color: #f5576c;
+            transition: all 0.3s;
+        }
+        
+        .checkpoint-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        #checkpointStatus {
+            padding: 8px 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            font-weight: 500;
+        }
+        
+        .video-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+            height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #gameFrame {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .placeholder {
+            color: #888;
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f0f0;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .status.running {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .info-box h4 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Lunar Lander: RL Learning Progress</h1>
+            <p>Watch how the agent learns through Reinforcement Learning (PPO)</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <h4>🧠 How it works:</h4>
+                <p>
+                    Watch the agent's training progress in real-time! You'll see it go through training stages 
+                    from 0% to 100%, showing how performance improves with more training. Each stage shows actual 
+                    episodes so you can see the improvement live!
+                </p>
+            </div>
+            
+            <div class="video-container">
+                <img id="gameFrame" style="display:none;">
+                <div id="placeholder" class="placeholder">
+                    <div class="placeholder-icon">🚀</div>
+                    <div>Click "Watch Training Progress" to see how the agent learns!</div>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Training Stage</div>
+                    <div class="stat-value" id="trainingStage" style="font-size: 1.5rem;">Ready</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Episode</div>
+                    <div class="stat-value" id="episode">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Episode Reward</div>
+                    <div class="stat-value" id="reward">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Reward</div>
+                    <div class="stat-value" id="avgReward">0</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn" class="btn" onclick="startTraining()">
+                    ▶️ Watch Training Progress
+                </button>
+                <button id="replayBtn" class="btn" onclick="replayTrained()" style="display:none; margin-left: 15px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    🔄 Replay Trained Agent
+                </button>
+            </div>
+            
+            <div id="status" class="status">Ready to start</div>
+        </div>
+    </div>
+
+    <script>
+        let running = false;
+        let trainingComplete = false;
+        
+        function startTraining() {
+            fetch('/start')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        running = true;
+                        trainingComplete = false;
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('replayBtn').style.display = 'none';
+                        document.getElementById('status').textContent = 'Training progression starting...';
+                        document.getElementById('status').classList.add('running');
+                        document.getElementById('placeholder').style.display = 'none';
+                        document.getElementById('gameFrame').style.display = 'block';
+                        updateFrame();
+                        updateStats();
+                    }
+                });
+        }
+        
+        function replayTrained() {
+            fetch('/replay')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'replaying') {
+                        running = true;
+                        document.getElementById('replayBtn').disabled = true;
+                        document.getElementById('status').textContent = 'Replaying trained agent...';
+                        document.getElementById('status').classList.add('running');
+                        updateFrame();
+                        updateStats();
+                    }
+                });
+        }
+        
+        function updateFrame() {
+            if (!running) return;
+            
+            fetch('/frame')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.frame) {
+                        document.getElementById('gameFrame').src = 'data:image/jpeg;base64,' + data.frame;
+                    }
+                    setTimeout(updateFrame, 30);
+                });
+        }
+        
+        function updateStats() {
+            if (!running) return;
+            
+            fetch('/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('trainingStage').textContent = data.training_stage || 'Training...';
+                    document.getElementById('episode').textContent = data.episode;
+                    document.getElementById('reward').textContent = Math.round(data.reward);
+                    document.getElementById('avgReward').textContent = Math.round(data.avg_reward);
+                    
+                    if (!data.running) {
+                        running = false;
+                        
+                        if (data.phase === 'trained' && data.total_episodes > 0) {
+                            // Replay just finished
+                            document.getElementById('replayBtn').disabled = false;
+                            document.getElementById('status').textContent = `Completed ${data.total_episodes} episodes! Avg: ${Math.round(data.avg_reward)}`;
+                        } else if (!trainingComplete && data.training_stage.includes('100%')) {
+                            // Training just finished
+                            trainingComplete = true;
+                            document.getElementById('startBtn').style.display = 'none';
+                            document.getElementById('replayBtn').style.display = 'inline-block';
+                            document.getElementById('replayBtn').disabled = false;
+                            document.getElementById('status').textContent = 'Training complete! Click "Replay" to watch the trained agent.';
+                            document.getElementById('status').classList.remove('running');
+                        }
+                    } else {
+                        setTimeout(updateStats, 100);
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
