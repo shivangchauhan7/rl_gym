@@ -4,6 +4,7 @@ Shows agent performance at different training stages (0%, 20%, 40%, 60%, 80%, 10
 """
 from flask import Flask, render_template, jsonify, Response, request
 import gymnasium as gym
+from gymnasium.envs.registration import register
 import torch
 import torch.nn as nn
 import numpy as np
@@ -16,6 +17,67 @@ import glob
 
 app = Flask(__name__)
 device = torch.device("cpu")
+
+# Check if Box2D is available
+try:
+    test_env = gym.make("LunarLanderContinuous-v3")
+    test_env.close()
+    HAS_BOX2D = True
+    print("✓ Box2D available - using real LunarLander environment")
+except Exception as e:
+    HAS_BOX2D = False
+    print(f"⚠ Box2D not available: {e}")
+    print("  Using dummy environment for Heroku deployment")
+    
+    # Register dummy environment
+    class DummyLunarLander:
+        def __init__(self, render_mode=None):
+            self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(8,), dtype=np.float32)
+            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+            self.render_mode = render_mode
+            self.steps = 0
+            self.state = np.zeros(8, dtype=np.float32)
+            
+        def reset(self, seed=None):
+            self.steps = 0
+            self.state = np.random.randn(8).astype(np.float32) * 0.1
+            return self.state.copy(), {}
+        
+        def step(self, action):
+            self.steps += 1
+            # Simulate some dynamics
+            self.state += np.random.randn(8).astype(np.float32) * 0.05
+            self.state = np.clip(self.state, -1, 1)
+            
+            # Reward based on dummy criteria
+            reward = -abs(self.state[1]) * 10  # Penalty for being far from center
+            terminated = self.steps >= 500
+            truncated = False
+            return self.state.copy(), reward, terminated, truncated, {}
+        
+        def render(self):
+            # Return a simple placeholder image
+            img = np.ones((400, 600, 3), dtype=np.uint8) * 30
+            # Draw simple representation
+            cv2.putText(img, "Lunar Lander Simulation", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(img, "(Box2D not available on Heroku)", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (150, 150, 150), 1)
+            cv2.putText(img, f"Step: {self.steps}", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 1)
+            # Draw lander representation
+            cx, cy = 300, 200
+            cv2.circle(img, (cx, cy), 20, (100, 200, 100), -1)
+            cv2.rectangle(img, (cx-30, cy+20), (cx+30, cy+40), (150, 150, 150), -1)
+            return img
+        
+        def close(self):
+            pass
+    
+    try:
+        register(
+            id='LunarLanderContinuous-v3',
+            entry_point=lambda render_mode=None: DummyLunarLander(render_mode=render_mode),
+        )
+    except:
+        pass  # Already registered
 
 # Neural Network - Same architecture for all checkpoints
 class ActorCritic(nn.Module):
