@@ -2,6 +2,7 @@ flask==3.0.0
 numpy==2.0.2
 gymnasium==1.1.1
 box2d-py==2.3.8
+pygame==2.6.1
 opencv-python-headless==4.10.0.84
 gunicorn==21.2.0
 Pillow==10.4.0
