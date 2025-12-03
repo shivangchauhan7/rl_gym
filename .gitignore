@@ -18,18 +18,3 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
-
-# Training scripts (don't deploy these)
-lunarpy.py
-train_with_checkpoints.py
-cartpole_train.py
-create_better_checkpoints.py
-
-# Notebooks
-*.ipynb
-
-# Local testing
-play_local.py
-cartpole_play.py
-
-# Keep only essential files for deployment
